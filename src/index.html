@@ -15,10 +15,39 @@
         <!-- Channels Panel (Left Sidebar) -->
         <aside class="channels-panel">
             <header class="channels-header">Channels</header>
-            <ul class="channel-list">
-                <li class="channel-item active"># general</li>
-                <li class="channel-item"># voice-chat</li>
-            </ul>
+            <div class="channels-content">
+                <ul class="channel-list">
+                    <li class="channel-item active"># general</li>
+                    <li class="channel-item"># voice-chat</li>
+                </ul>
+                <div class="user-profile" id="userProfile">
+                    <div class="profile-avatar">
+                        <img src="https://ui-avatars.com/api/?name=User&background=C17C54&color=fff" alt="User Avatar" id="userAvatar">
+                    </div>
+                    <div class="profile-info">
+                        <span id="userName">User</span>
+                        <span class="user-status">Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Modal -->
+            <div id="profileModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>Edit Profile</h2>
+                    <div class="modal-avatar-container">
+                        <img src="https://ui-avatars.com/api/?name=User&background=C17C54&color=fff" alt="User Avatar" id="modalAvatar">
+                        <label for="avatarUpload" class="change-avatar-btn">Change Avatar</label>
+                        <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUsername">Username</label>
+                        <input type="text" id="newUsername" placeholder="Enter new username">
+                    </div>
+                    <button id="saveProfile" class="control-button">Save Changes</button>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -36,7 +65,6 @@
             <div class="media-controls">
                 <button id="toggle-mic" class="control-button">Mute</button>
                 <button id="toggle-cam" class="control-button">Cam Off</button>
-                <button id="change-name" class="control-button">Change Name</button>
             </div>
         </main>
 

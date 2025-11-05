@@ -1,43 +1,140 @@
 /**
- * Gestiona la relación entre los IDs de usuario y sus nombres de usuario.
+ * Gestiona la información de los usuarios incluyendo nombres y avatares.
  */
 class UserManager {
     constructor() {
-        this.users = new Map(); // userId -> username
+        this.users = new Map(); // userId -> { username, avatar }
+        this.currentUserId = `user-${Math.random().toString(36).substr(2, 9)}`; // Generate a unique ID for the current user
+        this.currentUsername = 'User';
+        this.currentAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUsername)}&background=C17C54&color=fff`;
+        
+        // Load saved user data from localStorage if available
+        this.loadUserData();
     }
 
     /**
-     * Añade o actualiza un usuario.
-     * @param {string} userId - El ID del usuario.
-     * @param {string} username - El nombre de usuario.
+     * Loads user data from localStorage
      */
-    updateUser(userId, username) {
-        this.users.set(userId, username);
+    loadUserData() {
+        const savedUser = localStorage.getItem('userProfile');
+        if (savedUser) {
+            try {
+                const { username, avatar } = JSON.parse(savedUser);
+                this.currentUsername = username || this.currentUsername;
+                this.currentAvatar = avatar || this.currentAvatar;
+            } catch (e) {
+                console.error('Error loading user data:', e);
+            }
+        }
     }
 
     /**
-     * Elimina un usuario.
-     * @param {string} userId - El ID del usuario.
+     * Saves user data to localStorage
+     */
+    saveUserData() {
+        const userData = {
+            username: this.currentUsername,
+            avatar: this.currentAvatar
+        };
+        localStorage.setItem('userProfile', JSON.stringify(userData));
+    }
+
+    /**
+     * Updates the current user's profile
+     * @param {string} username - The new username
+     * @param {string} [avatar] - The new avatar URL
+     */
+    updateCurrentUser(username, avatar) {
+        if (username) this.currentUsername = username;
+        if (avatar) this.currentAvatar = avatar;
+        this.saveUserData();
+        
+        // Dispatch event that the user profile was updated
+        const event = new CustomEvent('userProfileUpdated', {
+            detail: {
+                userId: this.currentUserId,
+                username: this.currentUsername,
+                avatar: this.currentAvatar
+            }
+        });
+        document.dispatchEvent(event);
+    }
+
+    /**
+     * Gets the current user's ID
+     * @returns {string} The current user's ID
+     */
+    getCurrentUserId() {
+        return this.currentUserId;
+    }
+
+    /**
+     * Gets the current user's username
+     * @returns {string} The current username
+     */
+    getCurrentUsername() {
+        return this.currentUsername;
+    }
+
+    /**
+     * Gets the current user's avatar URL
+     * @returns {string} The current avatar URL
+     */
+    getCurrentAvatar() {
+        return this.currentAvatar;
+    }
+
+    /**
+     * Adds or updates a user.
+     * @param {string} userId - The user ID.
+     * @param {string} username - The username.
+     * @param {string} [avatar] - Optional avatar URL.
+     */
+    updateUser(userId, username, avatar) {
+        this.users.set(userId, { username, avatar });
+    }
+
+    /**
+     * Removes a user.
+     * @param {string} userId - The user ID.
      */
     removeUser(userId) {
         this.users.delete(userId);
     }
 
     /**
-     * Obtiene el nombre de usuario a partir de un ID.
-     * @param {string} userId - El ID del usuario.
-     * @returns {string} El nombre de usuario o el propio ID si no se encuentra.
+     * Gets the username from a user ID.
+     * @param {string} userId - The user ID.
+     * @returns {string} The username or the ID if not found.
      */
     getUsername(userId) {
-        return this.users.get(userId) || userId;
+        const user = this.users.get(userId);
+        return user ? user.username : userId;
     }
 
     /**
-     * Obtiene todos los usuarios como un array de objetos.
-     * @returns {{userId: string, username: string}[]} Un array de usuarios.
+     * Gets the avatar URL from a user ID.
+     * @param {string} userId - The user ID.
+     * @returns {string} The avatar URL or a default one if not found.
+     */
+    getAvatar(userId) {
+        if (userId === this.currentUserId) {
+            return this.currentAvatar;
+        }
+        const user = this.users.get(userId);
+        return user && user.avatar ? user.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(userId)}&background=2D2424&color=F0E6D2`;
+    }
+
+    /**
+     * Gets all users as an array of objects.
+     * @returns {{userId: string, username: string, avatar: string}[]} An array of users.
      */
     getAllUsers() {
-        return Array.from(this.users.entries()).map(([userId, username]) => ({ userId, username }));
+        return Array.from(this.users.entries()).map(([userId, user]) => ({
+            userId,
+            username: user.username,
+            avatar: user.avatar
+        }));
     }
 }
 

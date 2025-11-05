@@ -43,6 +43,22 @@ export class VideoConferenceApp {
         // Acoplar el rtcManager al peerManager para la notificación del stream.
         this.peerManager.setRtcManager(this.rtcManager);
 
+        // Listen for profile updates
+        document.addEventListener('userProfileUpdated', () => {
+            // Update the user list when profile changes
+            this.updateUserList();
+            
+            // Notify other peers about the name change
+            if (this.wsManager && this.wsManager.isConnected()) {
+                this.wsManager.send({
+                    type: 'userUpdate',
+                    userId: this.userManager.getCurrentUserId(),
+                    username: this.userManager.getCurrentUsername(),
+                    avatar: this.userManager.getCurrentAvatar()
+                });
+            }
+        });
+
         await this.setupLocalMedia(); // Paso 1: Configurar medios locales (Cámara/Micrófono).
         this.registerWebSocketHandlers(); // Paso 2: Registrar manejadores de eventos del WebSocket.
         this.wsManager.connect(); // Paso 3: Conectar al servidor WebSocket.
@@ -82,12 +98,23 @@ export class VideoConferenceApp {
     }
 
     /**
-     * Pide al usuario un nombre y lo envía al servidor.
+     * Actualiza el nombre de usuario en el servidor.
+     * @param {string} newUsername - El nuevo nombre de usuario.
      */
-    promptAndSetUsername() {
-        const newUsername = prompt('Por favor, introduce tu nombre de usuario:', this.userManager.getUsername(this.rtcManager.myUserId));
-        if (newUsername && newUsername.trim()) {
-            this.setUsername(newUsername.trim());
+    setUsername(newUsername) {
+        if (!newUsername || !newUsername.trim()) return;
+        
+        const username = newUsername.trim();
+        this.wsManager.send({ 
+            type: 'set-username', 
+            username: username 
+        });
+        
+        // Actualizar el perfil localmente
+        const currentUser = this.userManager.getCurrentUser();
+        if (currentUser) {
+            currentUser.username = username;
+            this.userManager.saveCurrentUser(currentUser);
         }
     }
 
@@ -124,10 +151,22 @@ export class VideoConferenceApp {
         this.wsManager.onMessage('assign-id', (message) => {
             console.log('Evento recibido: assign-id', message);
             this.rtcManager.setMyUserId(message.userId);
-            this.userManager.updateUser(message.userId, message.username);
-            console.log(`ID de usuario asignado: ${message.userId} como ${message.username}`);
-            // Preguntar por un nombre de usuario personalizado
-            this.promptAndSetUsername();
+            
+            // Usar el nombre de perfil existente si está disponible
+            const currentUser = this.userManager.getCurrentUser();
+            const username = currentUser?.username || message.username;
+            
+            // Actualizar el usuario con el nombre del perfil
+            this.userManager.updateUser(message.userId, username);
+            console.log(`ID de usuario asignado: ${message.userId} como ${username}`);
+            
+            // Notificar al servidor sobre el nombre de usuario
+            if (currentUser?.username) {
+                this.wsManager.send({
+                    type: 'set-username',
+                    username: currentUser.username
+                });
+            }
         });
 
         // Evento: Un nuevo usuario se ha unido a la sala.
