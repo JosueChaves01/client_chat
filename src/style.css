@@ -1,0 +1,150 @@
+/* General Body Styles */
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: #0D1215; /* brand.dark.background */
+    color: #F0E6D2; /* brand.dark.text */
+    overflow: hidden;
+}
+
+/* App Container */
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Channels Panel (Left Sidebar) */
+.channels-panel {
+    width: 240px;
+    background-color: #1A1A1A; /* brand.dark.surface */
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+}
+
+.channels-header {
+    padding: 16px;
+    border-bottom: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.channel-list {
+    list-style: none;
+    padding: 16px 8px;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.channel-item {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #D4B483; /* brand.dark.textSecondary */
+}
+
+.channel-item:hover, .channel-item.active {
+    background-color: #2D2424; /* brand.dark.surfaceVariant */
+    color: #F0E6D2; /* brand.dark.text */
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #141414; /* brand.dark.cardBg */
+}
+
+/* Video Grid */
+#videoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    flex-grow: 1;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    background-color: #000;
+    border: 1px solid #3D3D3D; /* brand.dark.border */
+}
+
+/* Chat and Input Area */
+.chat-container {
+    border-top: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+    display: flex;
+    flex-direction: column;
+    height: 200px; /* Example height */
+}
+
+#messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 16px;
+    list-style: none;
+    margin: 0;
+}
+
+#messages li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.message-input-container {
+    display: flex;
+    padding: 16px;
+}
+
+#messageInput {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #2D2424; /* brand.dark.surfaceVariant */
+    color: #F0E6D2; /* brand.dark.text */
+    outline: none;
+}
+
+#messageInput::placeholder {
+    color: #D4B483; /* brand.dark.textSecondary */
+}
+
+/* Users Panel (Right Sidebar) */
+.users-panel {
+    width: 240px;
+    background-color: #1A1A1A; /* brand.dark.surface */
+    border-left: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.users-header {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+    color: #F0E6D2; /* brand.dark.text */
+}
+
+.user-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    color: #D4B483; /* brand.dark.textSecondary */
+    font-weight: 500;
+}

@@ -14,6 +14,7 @@ export class WebRTCManager {
 
     setMyUserId(userId) {
         this.myUserId = userId;
+        this.updateUserListUI();
     }
 
     setLocalStream(stream) {
@@ -42,6 +43,7 @@ export class WebRTCManager {
      * Inicia la conexión con un nuevo usuario (flujo del "iniciador").
      */
     async handleUserJoined(userId) {
+        this.updateUserListUI();
         // Para prevenir una condición de carrera (glare), solo el par con el ID "menor" (alfabéticamente) iniciará la conexión.
         if (this.myUserId > userId) {
             console.log(`Mi ID (${this.myUserId}) es mayor que ${userId}. Esperaré su oferta.`);
@@ -162,6 +164,7 @@ export class WebRTCManager {
         this.iceCandidateQueue.delete(userId);
         this.uiManager.removeVideoElement(userId);
         console.log(`Usuario ${userId} se ha desconectado. Conexión cerrada.`);
+        this.updateUserListUI();
     }
 
     /**
@@ -191,6 +194,14 @@ export class WebRTCManager {
                 this.wsManager.send({ type: 'ice-candidate', userId: userId, candidate: event.candidate });
             }
         };
+    }
+
+    /**
+     * Reúne todos los IDs de usuario y actualiza la UI.
+     */
+    updateUserListUI() {
+        const allUserIds = [this.myUserId, ...this.peerManager.peerConnections.keys()].filter(Boolean);
+        this.uiManager.updateUserList(allUserIds, this.myUserId);
     }
 
     /**

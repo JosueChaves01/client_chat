@@ -10,6 +10,7 @@ import { WebSocketManager } from './WebSocketManager.js';
 import { WebRTCManager } from './WebRTCManager.js';
 import { UIManager } from './UIManager.js';
 
+
 /**
  * Clase principal que orquesta toda la aplicación de videoconferencia.
  * Responsabilidades:
@@ -27,6 +28,7 @@ export class VideoConferenceApp {
         this.peerManager = new PeerConnectionManager();
         this.wsManager = new WebSocketManager(config.WEBSOCKET_URL);
         this.rtcManager = new WebRTCManager(this.peerManager, UIManager, this.wsManager);
+        this.uiManager = UIManager;
     }
 
     /**
@@ -60,6 +62,22 @@ export class VideoConferenceApp {
     }
 
     /**
+     * Envía un mensaje de chat a través del WebSocket y lo muestra en la UI local.
+     * @param {string} text - El contenido del mensaje.
+     */
+    sendChatMessage(text) {
+        if (!text || !text.trim()) return;
+
+        const message = {
+            type: 'chat-message',
+            content: text
+        };
+
+        this.wsManager.send(message);
+        this.uiManager.addChatMessage(text, 'Yo'); // Muestra el mensaje localmente
+    }
+
+    /**
      * Registra todos los manejadores para los mensajes del WebSocket.
      * Aquí es donde la aplicación reacciona a los eventos de señalización del servidor.
      */
@@ -87,6 +105,12 @@ export class VideoConferenceApp {
         this.wsManager.onMessage('user-left', (message) => {
             console.log('Procesando evento: user-left', message);
             this.rtcManager.handleUserLeft(message.userId);
+        });
+
+        // Evento: Recibimos un mensaje de chat de otro usuario.
+        this.wsManager.onMessage('chat-message', (message) => {
+            console.log('Procesando evento: chat-message', message);
+            this.uiManager.addChatMessage(message.content, message.fromUserId);
         });
 
         // Evento: Recibimos una "oferta" de otro par para iniciar una conexión WebRTC.
