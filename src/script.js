@@ -5,6 +5,7 @@ const localVideo = document.getElementById('localVideo');
 const messageInput = document.getElementById('messageInput');
 const toggleMicButton = document.getElementById('toggle-mic');
 const toggleCamButton = document.getElementById('toggle-cam');
+const changeNameButton = document.getElementById('change-name');
 
 // --- Inicialización de la Aplicación ---
 async function main() {
@@ -33,6 +34,11 @@ async function main() {
             const isVideoEnabled = app.toggleVideo();
             toggleCamButton.textContent = isVideoEnabled ? 'Cam Off' : 'Cam On';
             toggleCamButton.classList.toggle('active', !isVideoEnabled);
+        });
+
+        // Event listener para cambiar el nombre de usuario
+        changeNameButton.addEventListener('click', () => {
+            app.promptAndSetUsername();
         });
 
     } catch (error) {

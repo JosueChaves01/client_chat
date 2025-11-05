@@ -9,6 +9,7 @@ import { PeerConnectionManager } from './PeerConnectionManager.js';
 import { WebSocketManager } from './WebSocketManager.js';
 import { WebRTCManager } from './WebRTCManager.js';
 import { UIManager } from './UIManager.js';
+import { userManager } from './UserManager.js';
 
 
 /**
@@ -27,8 +28,9 @@ export class VideoConferenceApp {
         this.localVideoElement = localVideoElement;
         this.peerManager = new PeerConnectionManager();
         this.wsManager = new WebSocketManager(config.WEBSOCKET_URL);
-        this.rtcManager = new WebRTCManager(this.peerManager, UIManager, this.wsManager);
+        this.rtcManager = new WebRTCManager(this.peerManager, UIManager, this.wsManager, userManager);
         this.uiManager = UIManager;
+        this.userManager = userManager;
     }
 
     /**
@@ -74,7 +76,27 @@ export class VideoConferenceApp {
         };
 
         this.wsManager.send(message);
-        this.uiManager.addChatMessage(text, 'Yo'); // Muestra el mensaje localmente
+        // Muestra el mensaje localmente usando el nombre de usuario actual
+        const myUsername = this.userManager.getUsername(this.rtcManager.myUserId);
+        this.uiManager.addChatMessage(text, `${myUsername} (Tú)`);
+    }
+
+    /**
+     * Pide al usuario un nombre y lo envía al servidor.
+     */
+    promptAndSetUsername() {
+        const newUsername = prompt('Por favor, introduce tu nombre de usuario:', this.userManager.getUsername(this.rtcManager.myUserId));
+        if (newUsername && newUsername.trim()) {
+            this.setUsername(newUsername.trim());
+        }
+    }
+
+    /**
+     * Envía una solicitud para cambiar el nombre de usuario.
+     * @param {string} newUsername - El nuevo nombre de usuario.
+     */
+    setUsername(newUsername) {
+        this.wsManager.send({ type: 'set-username', username: newUsername });
     }
 
     /**
@@ -98,11 +120,14 @@ export class VideoConferenceApp {
      * Aquí es donde la aplicación reacciona a los eventos de señalización del servidor.
      */
     registerWebSocketHandlers() {
-        // Evento: El servidor nos asigna un ID único al conectarnos.
+        // Evento: El servidor nos asigna un ID y un username inicial.
         this.wsManager.onMessage('assign-id', (message) => {
             console.log('Evento recibido: assign-id', message);
             this.rtcManager.setMyUserId(message.userId);
-            console.log(`ID de usuario asignado: ${message.userId}`);
+            this.userManager.updateUser(message.userId, message.username);
+            console.log(`ID de usuario asignado: ${message.userId} como ${message.username}`);
+            // Preguntar por un nombre de usuario personalizado
+            this.promptAndSetUsername();
         });
 
         // Evento: Un nuevo usuario se ha unido a la sala.
@@ -114,19 +139,30 @@ export class VideoConferenceApp {
         // Evento: Al entrar, el servidor nos envía una lista de los usuarios que ya estaban en la sala.
         this.wsManager.onMessage('existing-users', (message) => {
             console.log('Procesando evento: existing-users', message);
-            message.userIds.forEach(userId => this.rtcManager.handleUserJoined(userId));
+            message.users.forEach(user => {
+                this.userManager.updateUser(user.userId, user.username);
+                this.rtcManager.handleUserJoined(user.userId);
+            });
         });
 
         // Evento: Un usuario ha abandonado la sala.
         this.wsManager.onMessage('user-left', (message) => {
             console.log('Procesando evento: user-left', message);
+            this.userManager.removeUser(message.userId);
             this.rtcManager.handleUserLeft(message.userId);
         });
 
         // Evento: Recibimos un mensaje de chat de otro usuario.
         this.wsManager.onMessage('chat-message', (message) => {
             console.log('Procesando evento: chat-message', message);
-            this.uiManager.addChatMessage(message.content, message.fromUserId);
+            this.uiManager.addChatMessage(message.content, message.fromUsername);
+        });
+
+        // Evento: Un usuario ha actualizado su nombre.
+        this.wsManager.onMessage('user-updated', (message) => {
+            console.log('Procesando evento: user-updated', message);
+            this.userManager.updateUser(message.userId, message.username);
+            this.rtcManager.updateUserListUI(); // Forzar actualización de la lista de usuarios
         });
 
         // Evento: Recibimos una "oferta" de otro par para iniciar una conexión WebRTC.

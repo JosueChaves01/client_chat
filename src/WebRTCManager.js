@@ -3,10 +3,11 @@
  * Su responsabilidad es manejar el protocolo de señalización de WebRTC.
  */
 export class WebRTCManager {
-    constructor(peerManager, uiManager, webSocketManager) {
+    constructor(peerManager, uiManager, webSocketManager, userManager) {
         this.peerManager = peerManager;
         this.uiManager = uiManager;
         this.wsManager = webSocketManager;
+        this.userManager = userManager;
         this.iceCandidateQueue = new Map();
         this.myUserId = null;
         this.localStream = null;
@@ -43,15 +44,16 @@ export class WebRTCManager {
      * Inicia la conexión con un nuevo usuario (flujo del "iniciador").
      */
     async handleUserJoined(userId) {
+        // Primero, creamos la conexión y actualizamos la UI
+        const { peerConnection } = this.getOrCreatePeerConnection(userId);
         this.updateUserListUI();
+
         // Para prevenir una condición de carrera (glare), solo el par con el ID "menor" (alfabéticamente) iniciará la conexión.
         if (this.myUserId > userId) {
             console.log(`Mi ID (${this.myUserId}) es mayor que ${userId}. Esperaré su oferta.`);
-            return;
+            return; // No iniciamos la oferta, pero la conexión y la UI ya están listas.
         }
         console.log(`Mi ID (${this.myUserId}) es menor que ${userId}. Inciaré la conexión.`);
-
-        const { peerConnection } = this.getOrCreatePeerConnection(userId);
 
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => {
@@ -200,8 +202,8 @@ export class WebRTCManager {
      * Reúne todos los IDs de usuario y actualiza la UI.
      */
     updateUserListUI() {
-        const allUserIds = [this.myUserId, ...this.peerManager.peerConnections.keys()].filter(Boolean);
-        this.uiManager.updateUserList(allUserIds, this.myUserId);
+        const allUsers = this.userManager.getAllUsers();
+        this.uiManager.updateUserList(allUsers, this.myUserId);
     }
 
     /**

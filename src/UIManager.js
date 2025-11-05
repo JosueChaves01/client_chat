@@ -49,10 +49,10 @@ export const UIManager = {
 
     /**
      * Actualiza la lista de usuarios en el panel derecho.
-     * @param {string[]} userIds - Un array con los IDs de todos los usuarios conectados.
+     * @param {{userId: string, username: string}[]} users - Un array de objetos de usuario.
      * @param {string} myUserId - El ID del usuario local para destacarlo.
      */
-    updateUserList: (userIds, myUserId) => {
+    updateUserList: (users, myUserId) => {
         if (!UIManager.usersList) {
             // Si la lista no existe, la creamos una sola vez.
             const header = document.createElement('header');
@@ -69,10 +69,10 @@ export const UIManager = {
         UIManager.usersList.innerHTML = '';
 
         // Añadir cada usuario a la lista
-        userIds.forEach(id => {
+        users.forEach(user => {
             const li = document.createElement('li');
             li.className = 'user-item';
-            li.textContent = id === myUserId ? `${id} (Tú)` : id;
+            li.textContent = user.userId === myUserId ? `${user.username} (Tú)` : user.username;
             UIManager.usersList.appendChild(li);
         });
     }
