@@ -78,6 +78,22 @@ export class VideoConferenceApp {
     }
 
     /**
+     * Activa/desactiva el micrófono.
+     * @returns {boolean} El nuevo estado de la pista de audio.
+     */
+    toggleAudio() {
+        return this.peerManager.toggleAudio();
+    }
+
+    /**
+     * Activa/desactiva la cámara.
+     * @returns {boolean} El nuevo estado de la pista de video.
+     */
+    toggleVideo() {
+        return this.peerManager.toggleVideo();
+    }
+
+    /**
      * Registra todos los manejadores para los mensajes del WebSocket.
      * Aquí es donde la aplicación reacciona a los eventos de señalización del servidor.
      */

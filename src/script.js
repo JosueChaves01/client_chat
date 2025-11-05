@@ -3,6 +3,8 @@ import { VideoConferenceApp } from './VideoConferenceApp.js';
 // --- Elementos del DOM y Variables Globales ---
 const localVideo = document.getElementById('localVideo');
 const messageInput = document.getElementById('messageInput');
+const toggleMicButton = document.getElementById('toggle-mic');
+const toggleCamButton = document.getElementById('toggle-cam');
 
 // --- Inicialización de la Aplicación ---
 async function main() {
@@ -17,6 +19,20 @@ async function main() {
                 app.sendChatMessage(messageInput.value);
                 messageInput.value = ''; // Limpia el input
             }
+        });
+
+        // Event listener para mutear/desmutear el micrófono
+        toggleMicButton.addEventListener('click', () => {
+            const isAudioEnabled = app.toggleAudio();
+            toggleMicButton.textContent = isAudioEnabled ? 'Mute' : 'Unmute';
+            toggleMicButton.classList.toggle('active', !isAudioEnabled);
+        });
+
+        // Event listener para apagar/encender la cámara
+        toggleCamButton.addEventListener('click', () => {
+            const isVideoEnabled = app.toggleVideo();
+            toggleCamButton.textContent = isVideoEnabled ? 'Cam Off' : 'Cam On';
+            toggleCamButton.classList.toggle('active', !isVideoEnabled);
         });
 
     } catch (error) {

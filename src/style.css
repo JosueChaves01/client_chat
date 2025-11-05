@@ -148,3 +148,33 @@ video {
     color: #D4B483; /* brand.dark.textSecondary */
     font-weight: 500;
 }
+
+/* Media Controls */
+.media-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    background-color: #1A1A1A; /* brand.dark.surface */
+    border-top: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+}
+
+.control-button {
+    background-color: #C17C54; /* brand.dark.primary */
+    color: #F0E6D2; /* brand.dark.text */
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.control-button:hover {
+    background-color: #A05D3A; /* brand.dark.primaryVariant */
+}
+
+.control-button.active {
+    background-color: #FF6B6B; /* brand.dark.error */
+}
