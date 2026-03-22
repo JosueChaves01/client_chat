@@ -3,141 +3,162 @@ import { userManager } from './UserManager.js';
 /**
  * Gestiona todos los elementos de la interfaz de usuario.
  */
+const _videoGrid = document.getElementById('videoGrid');
+const _messagesList = document.getElementById('messages');
+const _messageInput = document.getElementById('messageInput');
+const _usersPanel = document.querySelector('.users-panel');
+
+if (!_videoGrid) console.error('UIManager: elemento #videoGrid no encontrado en el DOM.');
+if (!_messagesList) console.error('UIManager: elemento #messages no encontrado en el DOM.');
+if (!_messageInput) console.error('UIManager: elemento #messageInput no encontrado en el DOM.');
+if (!_usersPanel) console.error('UIManager: elemento .users-panel no encontrado en el DOM.');
+
+const _mainContainer = document.querySelector('.main-video-container');
+if (!_mainContainer) console.error('UIManager: elemento .main-video-container no encontrado en el DOM.');
+
 export const UIManager = {
     // Referencias a elementos del DOM
-    videoGrid: document.getElementById('videoGrid'),
-    messagesList: document.getElementById('messages'),
-    messageInput: document.getElementById('messageInput'),
-    usersPanel: document.querySelector('.users-panel'),
+    videoGrid: _videoGrid,
+    messagesList: _messagesList,
+    messageInput: _messageInput,
+    usersPanel: _usersPanel,
+    mainContainer: _mainContainer,
     usersList: null, // Se creará dinámicamente
+
+    // Helper: obtiene el grid de participantes (es dinámico, puede crearse en runtime)
+    _getParticipantsGrid: () => document.querySelector('.participants-grid'),
 
     /**
      * Crea y añade un elemento de video para un usuario remoto.
-     * @param userId - El ID del usuario.
-     * @returns El elemento de video creado.
+     * @param {string} userId - El ID del usuario.
+     * @returns {HTMLVideoElement} El elemento de video creado.
      */
-    createVideoElement: function(userId) {
-        // Verificar si ya existe un elemento para este usuario
-        let videoElement = document.getElementById(`video-${userId}`);
+    createVideoElement: (userId) => {
+        // Create video element
+        const videoElement = document.createElement('video');
+        videoElement.id = `video-${userId}`;
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+        videoElement.muted = true; // Mute remote videos by default
         
-        if (!videoElement) {
-            // Si es el video local, usamos el elemento existente
-            if (userId === 'local') {
-                videoElement = document.getElementById('localVideo');
-                if (!videoElement) {
-                    videoElement = document.createElement('video');
-                    videoElement.id = 'localVideo';
-                    videoElement.autoplay = true;
-                    videoElement.muted = true;
-                    videoElement.playsInline = true;
-                    videoElement.className = 'participant-video local-video';
-                    
-                    const videoContainer = document.createElement('div');
-                    videoContainer.className = 'video-container';
-                    videoContainer.dataset.userId = 'local';
-                    
-                    const usernameOverlay = document.createElement('div');
-                    usernameOverlay.className = 'video-username';
-                    usernameOverlay.textContent = 'Tú';
-                    
-                    videoContainer.appendChild(videoElement);
-                    videoContainer.appendChild(usernameOverlay);
-                    UIManager.videoGrid.appendChild(videoContainer);
-                }
-            } else {
-                // Crear el elemento de video para usuario remoto
-                videoElement = document.createElement('video');
-                videoElement.id = `video-${userId}`;
-                videoElement.autoplay = true;
-                videoElement.playsInline = true;
-                videoElement.className = 'participant-video';
-                
-                // Crear contenedor para el video
-                const videoContainer = document.createElement('div');
-                videoContainer.className = 'video-container';
-                videoContainer.dataset.userId = userId;
-                
-                // Añadir overlay de nombre de usuario
-                const usernameOverlay = document.createElement('div');
-                usernameOverlay.className = 'video-username';
-                usernameOverlay.textContent = userManager.getUsername(userId) || `Usuario ${userId.slice(0, 6)}`;
-                
-                videoContainer.appendChild(videoElement);
-                videoContainer.appendChild(usernameOverlay);
-                
-                // Añadir al grid
-                UIManager.videoGrid.appendChild(videoContainer);
-            }
-            
-            // Forzar un reflow para asegurar que los estilos se apliquen
-            setTimeout(() => {
-                UIManager.updateVideoGridLayout();
-            }, 0);
+        // Create video container
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'video-tile';
+        videoContainer.id = `video-container-${userId}`;
+        
+        // Create user info overlay
+        const videoInfo = document.createElement('div');
+        videoInfo.className = 'video-info';
+        
+        const audioIndicator = document.createElement('div');
+        audioIndicator.className = 'audio-indicator';
+        
+        const username = document.createElement('span');
+        username.className = 'username';
+        username.textContent = userManager.getUsername(userId) || `User ${userId.slice(0, 6)}`;
+        
+        videoInfo.appendChild(audioIndicator);
+        videoInfo.appendChild(username);
+        
+        videoContainer.appendChild(videoElement);
+        videoContainer.appendChild(videoInfo);
+        
+        // If this is the first video, make it the main video
+        const mainContainer = UIManager.mainContainer;
+        const participantsGrid = UIManager._getParticipantsGrid() || UIManager.createParticipantsGrid();
+
+        if (!mainContainer.querySelector('video')) {
+            videoElement.classList.add('main-video');
+            videoContainer.classList.add('main-video-container');
+            mainContainer.innerHTML = '';
+            mainContainer.appendChild(videoContainer);
+        } else {
+            participantsGrid.appendChild(videoContainer);
         }
+        
+        // Store reference to the video element
+        videoElement._container = videoContainer;
         
         return videoElement;
     },
     
     /**
-     * Actualiza el diseño de la cuadrícula de videos según el número de participantes.
+     * Creates the participants grid container if it doesn't exist
      */
-    updateVideoGridLayout: function() {
-        const videoGrid = UIManager.videoGrid;
-        if (!videoGrid) return;
+    createParticipantsGrid: () => {
+        const mainContainer = UIManager.mainContainer;
+        let participantsGrid = UIManager._getParticipantsGrid();
         
-        // Obtener todos los contenedores de video
-        const videoContainers = Array.from(videoGrid.querySelectorAll('.video-container'));
-        const videoCount = videoContainers.length;
+        if (!participantsGrid) {
+            participantsGrid = document.createElement('div');
+            participantsGrid.className = 'participants-grid';
+            mainContainer.appendChild(participantsGrid);
+        }
         
-        // Asegurar que los videos mantengan su relación de aspecto
-        videoContainers.forEach(container => {
-            const video = container.querySelector('video');
-            if (!video) return;
-            
-            // Asegurar que el video ocupe todo el espacio disponible
-            video.style.width = '100%';
-            video.style.height = '100%';
-            video.style.objectFit = 'cover';
-            
-            // Actualizar el nombre de usuario
-            const usernameOverlay = container.querySelector('.video-username');
-            if (usernameOverlay && container.dataset.userId) {
-                const username = userManager.getUsername(container.dataset.userId) || 
-                               `Usuario ${container.dataset.userId.slice(0, 6)}`;
-                usernameOverlay.textContent = username;
-            }
-        });
+        return participantsGrid;
     },
 
     /**
      * Elimina el elemento de video de un usuario.
-     * @param userId - El ID del usuario.
+     * @param {string} userId - El ID del usuario.
      */
-    removeVideoElement: function(userId) {
-        // No eliminar el video local
-        if (userId === 'local') {
-            const videoElement = document.getElementById('localVideo');
-            if (videoElement && videoElement.srcObject) {
-                videoElement.srcObject.getTracks().forEach(track => track.stop());
-                videoElement.srcObject = null;
-            }
-            return;
+    removeVideoElement: (userId) => {
+        const videoElement = document.getElementById(`video-${userId}`);
+        if (!videoElement) return;
+        
+        // Remove the video container
+        const container = videoElement._container || videoElement.parentNode;
+        if (container) {
+            container.remove();
         }
         
-        const videoContainer = document.querySelector(`.video-container[data-user-id="${userId}"]`);
-        if (videoContainer) {
-            // Detener todas las pistas antes de eliminar
-            const videoElement = videoContainer.querySelector('video');
-            if (videoElement && videoElement.srcObject) {
-                videoElement.srcObject.getTracks().forEach(track => track.stop());
+        // If we removed the main video, promote another video to main
+        if (videoElement.classList.contains('main-video')) {
+            const participantsGrid = UIManager._getParticipantsGrid();
+            const firstChild = participantsGrid && participantsGrid.firstChild;
+            if (firstChild && firstChild.isConnected) {
+                const nextVideo = firstChild.querySelector('video');
+                if (nextVideo && nextVideo.isConnected) {
+                    UIManager.promoteToMainVideo(nextVideo);
+                }
             }
-            
-            // Eliminar el contenedor
-            videoContainer.remove();
-            
-            // Actualizar el diseño del grid
-            UIManager.updateVideoGridLayout();
         }
+    },
+    
+    /**
+     * Promotes a video to be the main video
+     * @param {HTMLVideoElement} videoElement - The video element to promote
+     */
+    promoteToMainVideo: (videoElement) => {
+        if (!videoElement) return;
+        
+        const container = videoElement._container || videoElement.parentNode;
+        if (!container) return;
+        
+        // Remove from participants grid
+        container.remove();
+        
+        // Get the current main video
+        const mainContainer = UIManager.mainContainer;
+        const currentMainVideo = mainContainer.querySelector('video');
+
+        // If there's a current main video, move it to the participants grid
+        if (currentMainVideo) {
+            const currentContainer = currentMainVideo._container || currentMainVideo.parentNode;
+            currentContainer.classList.remove('main-video-container');
+            currentMainVideo.classList.remove('main-video');
+
+            const participantsGrid = UIManager._getParticipantsGrid();
+            if (participantsGrid) {
+                participantsGrid.prepend(currentContainer);
+            }
+        }
+
+        // Set the new main video
+        container.classList.add('main-video-container');
+        videoElement.classList.add('main-video');
+        mainContainer.innerHTML = '';
+        mainContainer.appendChild(container);
     },
 
     /**
@@ -149,8 +170,13 @@ export const UIManager = {
         const li = document.createElement('li');
         const isCurrentUser = !userId || userId === userManager.getCurrentUserId();
         const displayName = isCurrentUser ? 'Tú' : (userManager.getUsername(userId) || `Usuario ${userId.slice(0, 6)}`);
-        
-        li.innerHTML = `<strong>${displayName}:</strong> ${text}`;
+
+        const strong = document.createElement('strong');
+        strong.textContent = `${displayName}:`;
+        const textNode = document.createTextNode(` ${text}`);
+
+        li.appendChild(strong);
+        li.appendChild(textNode);
         UIManager.messagesList.appendChild(li);
         // Scroll hasta el final
         UIManager.messagesList.scrollTop = UIManager.messagesList.scrollHeight;
@@ -161,10 +187,16 @@ export const UIManager = {
      * @param {Object} peerConnections - Mapa de conexiones de pares.
      * @param {string} myUserId - El ID del usuario local para destacarlo.
      */
-    updateUserList: function(users, myUserId) {
+    updateUserList: (peerConnections = {}, myUserId) => {
         if (!UIManager.usersList) {
+            // Si la lista no existe, la creamos una sola vez.
+            const header = document.createElement('header');
+            header.className = 'users-header';
+            header.textContent = 'Usuarios';
             UIManager.usersList = document.createElement('ul');
-            UIManager.usersList.className = 'users-list';
+            UIManager.usersList.className = 'user-list';
+            UIManager.usersPanel.innerHTML = ''; // Limpiar el panel
+            UIManager.usersPanel.appendChild(header);
             UIManager.usersPanel.appendChild(UIManager.usersList);
         }
 
@@ -174,23 +206,31 @@ export const UIManager = {
         // Añadir el usuario actual primero
         const currentUserItem = document.createElement('li');
         currentUserItem.className = 'user-item current-user';
-        currentUserItem.innerHTML = `
-            <img src="${userManager.getCurrentAvatar()}" alt="Avatar" class="user-avatar">
-            <span>${userManager.getCurrentUsername()} (Tú)</span>
-        `;
+        const currentAvatar = document.createElement('img');
+        currentAvatar.src = userManager.getCurrentAvatar();
+        currentAvatar.alt = 'Avatar';
+        currentAvatar.className = 'user-avatar';
+        const currentSpan = document.createElement('span');
+        currentSpan.textContent = `${userManager.getCurrentUsername()} (Tú)`;
+        currentUserItem.appendChild(currentAvatar);
+        currentUserItem.appendChild(currentSpan);
         UIManager.usersList.appendChild(currentUserItem);
 
         // Añadir cada usuario remoto a la lista
         Object.entries(peerConnections).forEach(([userId, peerConnection]) => {
             if (userId === myUserId) return; // Saltar el usuario actual
-            
+
             const userItem = document.createElement('li');
             userItem.className = 'user-item';
             const username = userManager.getUsername(userId) || `Usuario ${userId.slice(0, 6)}`;
-            userItem.innerHTML = `
-                <img src="${userManager.getAvatar(userId)}" alt="Avatar" class="user-avatar">
-                <span>${username}</span>
-            `;
+            const avatar = document.createElement('img');
+            avatar.src = userManager.getAvatar(userId);
+            avatar.alt = 'Avatar';
+            avatar.className = 'user-avatar';
+            const span = document.createElement('span');
+            span.textContent = username;
+            userItem.appendChild(avatar);
+            userItem.appendChild(span);
             UIManager.usersList.appendChild(userItem);
         });
     }

@@ -4,10 +4,10 @@
 class UserManager {
     constructor() {
         this.users = new Map(); // userId -> { username, avatar }
-        this.currentUserId = `user-${Math.random().toString(36).substr(2, 9)}`; // Generate a unique ID for the current user
+        this.currentUserId = `user-${Math.random().toString(36).substr(2, 9)}`; // Fallback si no hay datos guardados
         this.currentUsername = 'User';
         this.currentAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.currentUsername)}&background=C17C54&color=fff`;
-        
+
         // Load saved user data from localStorage if available
         this.loadUserData();
     }
@@ -19,12 +19,16 @@ class UserManager {
         const savedUser = localStorage.getItem('userProfile');
         if (savedUser) {
             try {
-                const { username, avatar } = JSON.parse(savedUser);
+                const { userId, username, avatar } = JSON.parse(savedUser);
+                if (userId) this.currentUserId = userId;
                 this.currentUsername = username || this.currentUsername;
                 this.currentAvatar = avatar || this.currentAvatar;
             } catch (e) {
                 console.error('Error loading user data:', e);
             }
+        } else {
+            // Primera vez: guardar el userId generado para que persista
+            this.saveUserData();
         }
     }
 
@@ -33,6 +37,7 @@ class UserManager {
      */
     saveUserData() {
         const userData = {
+            userId: this.currentUserId,
             username: this.currentUsername,
             avatar: this.currentAvatar
         };
@@ -45,7 +50,18 @@ class UserManager {
      * @param {string} [avatar] - The new avatar URL
      */
     updateCurrentUser(username, avatar) {
-        if (username) this.currentUsername = username;
+        if (username) {
+            const trimmed = username.trim();
+            if (trimmed.length < 1 || trimmed.length > 30) {
+                console.warn('updateCurrentUser: el nombre debe tener entre 1 y 30 caracteres.');
+                return;
+            }
+            if (!/^[\w\s\-áéíóúÁÉÍÓÚñÑ]+$/.test(trimmed)) {
+                console.warn('updateCurrentUser: el nombre contiene caracteres no permitidos.');
+                return;
+            }
+            this.currentUsername = trimmed;
+        }
         if (avatar) this.currentAvatar = avatar;
         this.saveUserData();
         

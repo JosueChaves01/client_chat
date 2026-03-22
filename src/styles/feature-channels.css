@@ -1,0 +1,60 @@
+/* ── Channel List ───────────────────────────────────────────────────────────── */
+
+.channel-list {
+  list-style: none;
+  padding: 16px 8px;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.channel-item {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #D4B483;
+}
+
+.channel-item:hover,
+.channel-item.active {
+  background-color: #2D2424;
+  color: #F0E6D2;
+}
+
+/* ── Channel Views ──────────────────────────────────────────────────────────── */
+
+.channel-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.channel-view.hidden {
+  display: none;
+}
+
+/* ── Channel Header ─────────────────────────────────────────────────────────── */
+
+.channel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #2A2A2A;
+  background-color: #141414;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #F0E6D2;
+  flex-shrink: 0;
+}
+
+.channel-header-icon {
+  color: #D4B483;
+  font-size: 1.1rem;
+}
+
+.channel-header-name {
+  color: #F0E6D2;
+}

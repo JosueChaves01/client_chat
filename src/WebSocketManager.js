@@ -9,6 +9,7 @@ export class WebSocketManager {
         this.onOpen = null;
         this.isReady = false;
         this.messageQueue = [];
+        this.isFlushing = false;
     }
 
     /**
@@ -27,7 +28,13 @@ export class WebSocketManager {
         };
 
         this.ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
+            let message;
+            try {
+                message = JSON.parse(event.data);
+            } catch (e) {
+                console.error('Error al parsear mensaje WebSocket, ignorando:', e);
+                return;
+            }
             if (this.messageHandlers.has(message.type)) {
                 this.messageHandlers.get(message.type)(message);
             } else {
@@ -63,11 +70,22 @@ export class WebSocketManager {
         }
     }
 
+    /**
+     * Retorna true si el WebSocket está abierto y listo para enviar mensajes.
+     * @returns {boolean}
+     */
+    isConnected() {
+        return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+    }
+
     flushMessageQueue() {
+        if (this.isFlushing) return;
+        this.isFlushing = true;
         console.log(`Procesando ${this.messageQueue.length} mensajes encolados.`);
-        while (this.messageQueue.length > 0) {
+        while (this.messageQueue.length > 0 && this.isReady) {
             const message = this.messageQueue.shift();
-            this.send(message);
+            this.ws.send(JSON.stringify(message));
         }
+        this.isFlushing = false;
     }
 }

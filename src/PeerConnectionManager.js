@@ -34,24 +34,34 @@ export class PeerConnectionManager {
      * @returns {boolean} El nuevo estado de la pista de audio (true si está activa, false si no).
      */
     toggleAudio() {
-        const audioTrack = this.localStream.getAudioTracks()[0];
-        if (audioTrack) {
-            audioTrack.enabled = !audioTrack.enabled;
-            return audioTrack.enabled;
+        if (!this.localStream) {
+            console.warn('toggleAudio: no hay stream local disponible.');
+            return null;
         }
-        return false;
+        const audioTrack = this.localStream.getAudioTracks()[0];
+        if (!audioTrack) {
+            console.warn('toggleAudio: no se encontró pista de audio.');
+            return null;
+        }
+        audioTrack.enabled = !audioTrack.enabled;
+        return audioTrack.enabled;
     }
 
     /**
      * Activa o desactiva la pista de video del stream local.
-     * @returns {boolean} El nuevo estado de la pista de video (true si está activa, false si no).
+     * @returns {boolean|null} El nuevo estado de la pista de video, o null si no hay pista disponible.
      */
     toggleVideo() {
-        const videoTrack = this.localStream.getVideoTracks()[0];
-        if (videoTrack) {
-            videoTrack.enabled = !videoTrack.enabled;
-            return videoTrack.enabled;
+        if (!this.localStream) {
+            console.warn('toggleVideo: no hay stream local disponible.');
+            return null;
         }
-        return false;
+        const videoTrack = this.localStream.getVideoTracks()[0];
+        if (!videoTrack) {
+            console.warn('toggleVideo: no se encontró pista de video.');
+            return null;
+        }
+        videoTrack.enabled = !videoTrack.enabled;
+        return videoTrack.enabled;
     }
 }

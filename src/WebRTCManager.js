@@ -21,13 +21,6 @@ export class WebRTCManager {
     setLocalStream(stream) {
         this.localStream = stream;
         console.log('WebRTCManager ha recibido el stream local.');
-        
-        // Asegurarse de que el stream local se asigne al elemento de video local
-        const localVideo = document.getElementById('localVideo');
-        if (localVideo && !localVideo.srcObject) {
-            localVideo.srcObject = stream;
-            console.log('Stream local asignado al elemento de video.');
-        }
     }
 
     /**
@@ -51,18 +44,8 @@ export class WebRTCManager {
      * Inicia la conexión con un nuevo usuario (flujo del "iniciador").
      */
     async handleUserJoined(userId) {
-        console.log(`Manejando nueva conexión con usuario: ${userId}`);
         // Primero, creamos la conexión y actualizamos la UI
-        const { peerConnection, videoElement } = this.getOrCreatePeerConnection(userId);
-        
-        // Si tenemos un stream local, lo añadimos a la conexión
-        if (this.localStream) {
-            console.log('Añadiendo pistas locales a la conexión');
-            this.localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, this.localStream);
-            });
-        }
-        
+        const { peerConnection } = this.getOrCreatePeerConnection(userId);
         this.updateUserListUI();
 
         // Para prevenir una condición de carrera (glare), solo el par con el ID "menor" (alfabéticamente) iniciará la conexión.
@@ -71,6 +54,12 @@ export class WebRTCManager {
             return; // No iniciamos la oferta, pero la conexión y la UI ya están listas.
         }
         console.log(`Mi ID (${this.myUserId}) es menor que ${userId}. Inciaré la conexión.`);
+
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, this.localStream);
+            });
+        }
 
         // --- Inicio del proceso de negociación SDP (Session Description Protocol) ---
 
@@ -190,16 +179,13 @@ export class WebRTCManager {
         // Evento 'ontrack': Se dispara cuando se recibe una pista de medios (audio o video) del par remoto.
         // Esta es la parte mágica donde recibimos el video de la otra persona.
         peerConnection.ontrack = (event) => {
-            console.log(`Recibido track remoto de ${userId}`, event.streams);
-            if (event.streams && event.streams[0]) {
-                // Asegurarse de que el elemento de video exista
-                const videoEl = document.getElementById(`video-${userId}`);
-                if (videoEl) {
-                    videoEl.srcObject = event.streams[0];
-                    console.log(`Stream asignado al video de ${userId}`);
-                } else {
-                    console.error(`No se encontró el elemento de video para el usuario ${userId}`);
-                }
+            console.log(`Recibiendo stream de ${userId}`);
+            if (videoElement.srcObject !== event.streams[0]) {
+                videoElement.srcObject = event.streams[0];
+                // Forzar la reproducción para asegurar que el video comience.
+                videoElement.play().catch(e => {
+                    console.error(`Error al intentar reproducir el video de ${userId}:`, e);
+                });
             }
         };
 
@@ -216,8 +202,8 @@ export class WebRTCManager {
      * Reúne todos los IDs de usuario y actualiza la UI.
      */
     updateUserListUI() {
-        const allUsers = this.userManager.getAllUsers();
-        this.uiManager.updateUserList(allUsers, this.myUserId);
+        const peerConnections = Object.fromEntries(this.peerManager.peerConnections);
+        this.uiManager.updateUserList(peerConnections, this.myUserId);
     }
 
     /**

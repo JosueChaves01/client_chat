@@ -5,26 +5,12 @@ body {
     background-color: #0D1215; /* brand.dark.background */
     color: #F0E6D2; /* brand.dark.text */
     overflow: hidden;
-    height: 100vh;
-    width: 100vw;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-areas:
-        "channels header users"
-        "channels main users"
-        "channels chat users"
-        "channels footer users";
-    grid-template-columns: var(--channels-width) 1fr var(--users-width);
-    grid-template-rows: var(--header-height) 1fr auto auto;
-    overflow: hidden;
 }
 
 /* App Container */
 .app-container {
     display: flex;
     height: 100vh;
-    grid-area: main;
 }
 
 /* Channels Panel (Left Sidebar) */
@@ -80,301 +66,304 @@ body {
 }
 
 /* Video Grid */
-#videoGrid {
-    grid-area: main;
+.video-grid {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    background-color: #1A1A1A; /* brand.dark.surface */
+    position: relative;
+}
+
+/* Main video container */
+.main-video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    overflow: hidden;
+}
+
+/* Main video (focused user) */
+.main-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #000;
+}
+
+/* Video grid for other participants */
+.participants-grid {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    width: 25%;
+    max-width: 300px;
+    max-height: calc(100% - 40px);
     display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     padding: 10px;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    transition: all 0.3s ease;
-    overflow: hidden;
-    background-color: #141414;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #4A4A4A transparent;
 }
 
-/* Video Grid Layouts */
-#videoGrid {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.video-container {
+/* Video element in the grid */
+.video-tile {
     position: relative;
-    background: #1e1e1e;
-    border-right: 1px solid #2f3136;
+    width: 100%;
+    padding-bottom: 100%; /* 1:1 aspect ratio */
+    background-color: #2F3136;
+    border-radius: 8px;
     overflow: hidden;
-    transition: all 0.3s ease;
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-/* Remove all specific grid layouts and use a simple flex row */
-#videoGrid .video-container {
-    flex: 1 1 0%;
-    min-width: 0;
-    height: 100%;
-    border-right: 1px solid #2f3136;
-}
-
-/* Remove right border from last video */
-#videoGrid .video-container:last-child {
-    border-right: none;
-}
-
-/* Local video styling */
-.video-container.local-video {
-    position: relative;
-    z-index: 10;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-    border: 2px solid #7289da;
-    box-sizing: border-box;
-}
-
-/* Ensure video fills container */
-.participant-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-/* Local video styling */
-.video-container.local-video {
-    order: 1; /* Keep local video at the end */
-    border: 2px solid #7289da;
-}
-
-/* Video element styling */
-.participant-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: #2f3136;
-    display: block;
-    aspect-ratio: 16/9;
-}
-
-/* Username overlay */
-.video-username {
+.video-tile video {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    pointer-events: none;
-}
-
-/* Video Container Styles */
-.video-container {
-    position: relative;
-    background: #1a1a1a;
-    border-radius: 0;
-    border-right: 1px solid #2f3136;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    min-height: 0;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1 1 0%;
-    height: 100%;
-}
-
-/* Local video styling */
-.video-container.local-video {
-    position: relative;
-    z-index: 10;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-    border: 2px solid #7289da;
-    box-sizing: border-box;
-    order: 1; /* Keep local video at the end */
-}
-
-.video-container:hover .video-username {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Video Styles */
-#videoGrid video {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 8px;
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    aspect-ratio: 16/9;
 }
 
-/* Make the local video smaller and position it */
-#localVideo {
-    position: relative;
-    z-index: 10;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease;
-}
-
-/* Adjust layout for different screen sizes */
-@media (max-width: 1024px) {
-    #videoGrid.five,
-    #videoGrid.six,
-    #videoGrid.seven,
-    #videoGrid.eight,
-    #videoGrid.nine {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    #videoGrid {
-        grid-template-columns: 1fr !important;
-        grid-auto-rows: auto !important;
-    }
-}
-
-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 8px;
-    background-color: #000;
-    border: 1px solid #3D3D3D; /* brand.dark.border */
-    display: block;
-}
-
-/* Username overlay */
-.video-username {
+/* User info overlay on video */
+.video-info {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
+    padding: 6px 8px;
     background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
     color: white;
-    padding: 8px 12px;
     font-size: 12px;
-    font-weight: 500;
-    opacity: 0.8;
-    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.video-info .username {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    pointer-events: none;
 }
 
-/* Loading indicator */
-.video-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    z-index: 2;
-}
-
-.video-container.connected::before {
+/* Audio indicator */
+.audio-indicator {
+    width: 8px;
+    height: 8px;
+    background-color: #43b581;
+    border-radius: 50%;
+    margin-right: 4px;
     display: none;
 }
 
+.audio-active .audio-indicator {
+    display: block;
+}
+
+/* Scrollbar styles */
+.participants-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.participants-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.participants-grid::-webkit-scrollbar-thumb {
+    background-color: #4A4A4A;
+    border-radius: 3px;
+}
+
 /* Responsive adjustments */
-@media (max-width: 1024px) {
-    body {
-        grid-template-areas:
-            "header header"
-            "main main"
-            "chat chat"
-            "footer footer";
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto auto;
-    }
-    
-    .channels-panel, .users-panel {
-        display: none;
-    }
-    
-    #videoGrid {
-        max-height: calc(100vh - var(--header-height) - var(--chat-height) - 60px);
+@media (max-width: 1200px) {
+    .participants-grid {
+        grid-template-columns: 1fr 1fr 1fr;
     }
 }
 
 @media (max-width: 768px) {
-    #videoGrid {
-        grid-template-columns: 1fr !important;
-        grid-auto-rows: minmax(0, 1fr);
+    .participants-grid {
+        position: static;
+        width: 100%;
+        max-width: 100%;
+        max-height: 200px;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
     
-    .video-username {
-        font-size: 10px;
-        padding: 4px 8px;
-    }
-    
-    .local-video {
-        transform: scale(0.9);
+    .main-video-container {
+        height: 60vh;
     }
 }
 
-/* Chat and Input Area */
-.chat-container {
-    border-top: 1px solid #2A2A2A; /* brand.dark.cardBorder */
+/* Channel Views */
+.channel-view {
     display: flex;
     flex-direction: column;
-    height: 200px; /* Example height */
+    flex: 1;
+    overflow: hidden;
+}
+
+.channel-view.hidden {
+    display: none;
+}
+
+/* Channel Header */
+.channel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #2A2A2A;
+    background-color: #141414;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #F0E6D2;
+    flex-shrink: 0;
+}
+
+.channel-header-icon {
+    color: #D4B483;
+    font-size: 1.1rem;
+}
+
+.channel-header-name {
+    color: #F0E6D2;
+}
+
+/* General view: full-height text chat */
+#general-view {
+    background-color: #141414;
 }
 
 #messages {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 16px 20px;
     list-style: none;
     margin: 0;
 }
 
 #messages li {
     margin-bottom: 8px;
-    line-height: 1.4;
+    line-height: 1.5;
+    color: #F0E6D2;
 }
 
 .message-input-container {
     display: flex;
-    padding: 16px;
+    padding: 12px 20px 16px;
+    flex-shrink: 0;
 }
 
 #messageInput {
     flex-grow: 1;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 12px 16px;
+    border-radius: 8px;
     border: none;
-    background-color: #2D2424; /* brand.dark.surfaceVariant */
-    color: #F0E6D2; /* brand.dark.text */
+    background-color: #2D2424;
+    color: #F0E6D2;
     outline: none;
+    font-size: 0.95rem;
 }
 
 #messageInput::placeholder {
-    color: #D4B483; /* brand.dark.textSecondary */
+    color: #D4B483;
+}
+
+/* Voice view layout */
+#voice-view {
+    background-color: #0D1215;
+}
+
+/* Local video label */
+.local-video-label {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #F0E6D2;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Voice Status Bar */
+.voice-status-bar {
+    background-color: #1e3a2f;
+    border-top: 1px solid #2a5c42;
+    border-bottom: 1px solid #2a5c42;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.voice-status-bar.hidden {
+    display: none;
+}
+
+.voice-status-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #6fba8a;
+}
+
+.voice-status-icon {
+    font-size: 0.9rem;
+}
+
+.voice-status-label {
+    color: #6fba8a;
+}
+
+.voice-status-label strong {
+    color: #a8d5b5;
+}
+
+.voice-status-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.voice-ctrl-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    color: #c8e6c9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s;
+}
+
+.voice-ctrl-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.voice-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-ctrl-btn.active {
+    background: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.disconnect-btn {
+    background: rgba(192, 57, 43, 0.25);
+    color: #e57373;
+}
+
+.disconnect-btn:hover {
+    background: rgba(192, 57, 43, 0.45);
 }
 
 /* User Profile */
@@ -428,7 +417,6 @@ video {
 
 /* Modal */
 .modal {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -627,4 +615,13 @@ video {
 
 .control-button.active {
     background-color: #FF6B6B; /* brand.dark.error */
+}
+
+.disconnect-button {
+    background-color: #c0392b;
+    margin-left: 24px;
+}
+
+.disconnect-button:hover {
+    background-color: #a93226;
 }

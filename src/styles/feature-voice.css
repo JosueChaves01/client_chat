@@ -1,0 +1,214 @@
+/* ── Voice Chat View ────────────────────────────────────────────────────────── */
+
+#voice-view {
+  background-color: #0D1215;
+}
+
+/* ── Video Grid ─────────────────────────────────────────────────────────────── */
+
+.video-grid {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  background-color: #1A1A1A;
+  position: relative;
+}
+
+.main-video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  overflow: hidden;
+}
+
+.main-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000;
+}
+
+/* ── Participants Grid (thumbnail panel) ─────────────────────────────────────── */
+
+.participants-grid {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: 25%;
+  max-width: 300px;
+  max-height: calc(100% - 40px);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4A4A4A transparent;
+}
+
+.participants-grid::-webkit-scrollbar       { width: 6px; }
+.participants-grid::-webkit-scrollbar-track { background: transparent; }
+.participants-grid::-webkit-scrollbar-thumb { background-color: #4A4A4A; border-radius: 3px; }
+
+/* ── Video Tile ──────────────────────────────────────────────────────────────── */
+
+.video-tile {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* 1:1 aspect ratio */
+  background-color: #2F3136;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.video-tile video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Video Info Overlay ──────────────────────────────────────────────────────── */
+
+.video-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  color: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.video-info .username {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audio-indicator {
+  width: 8px;
+  height: 8px;
+  background-color: #43b581;
+  border-radius: 50%;
+  margin-right: 4px;
+  display: none;
+}
+
+.audio-active .audio-indicator {
+  display: block;
+}
+
+/* ── Local Video Label ───────────────────────────────────────────────────────── */
+
+.local-video-label {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #F0E6D2;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ── Voice Status Bar (sidebar) ─────────────────────────────────────────────── */
+
+.voice-status-bar {
+  background-color: #1e3a2f;
+  border-top: 1px solid #2a5c42;
+  border-bottom: 1px solid #2a5c42;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voice-status-bar.hidden {
+  display: none;
+}
+
+.voice-status-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #6fba8a;
+}
+
+.voice-status-icon { font-size: 0.9rem; }
+.voice-status-label { color: #6fba8a; }
+.voice-status-label strong { color: #a8d5b5; }
+
+.voice-status-controls {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Voice Control Buttons ───────────────────────────────────────────────────── */
+
+.voice-ctrl-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: #c8e6c9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+}
+
+.voice-ctrl-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.voice-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-ctrl-btn.active {
+  background: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+}
+
+.disconnect-btn {
+  background: rgba(192, 57, 43, 0.25);
+  color: #e57373;
+}
+
+.disconnect-btn:hover {
+  background: rgba(192, 57, 43, 0.45);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+  .participants-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .participants-grid {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    max-height: 200px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .main-video-container {
+    height: 60vh;
+  }
+}

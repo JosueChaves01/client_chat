@@ -2,79 +2,137 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC Chat</title>
-    <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebRTC Chat</title>
+  <link rel="icon" href="data:,">
 
+  <!-- Modular CSS -->
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/feature-channels.css">
+  <link rel="stylesheet" href="styles/feature-chat.css">
+  <link rel="stylesheet" href="styles/feature-voice.css">
+  <link rel="stylesheet" href="styles/feature-profile.css">
+  <link rel="stylesheet" href="styles/feature-users.css">
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Channels Panel (Left Sidebar) -->
-        <aside class="channels-panel">
-            <header class="channels-header">Channels</header>
-            <div class="channels-content">
-                <ul class="channel-list">
-                    <li class="channel-item active"># general</li>
-                    <li class="channel-item"># voice-chat</li>
-                </ul>
-                <div class="user-profile" id="userProfile">
-                    <div class="profile-avatar">
-                        <img src="https://ui-avatars.com/api/?name=User&background=C17C54&color=fff" alt="User Avatar" id="userAvatar">
-                    </div>
-                    <div class="profile-info">
-                        <span id="userName">User</span>
-                        <span class="user-status">Online</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Profile Modal -->
-            <div id="profileModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-modal">&times;</span>
-                    <h2>Edit Profile</h2>
-                    <div class="modal-avatar-container">
-                        <img src="https://ui-avatars.com/api/?name=User&background=C17C54&color=fff" alt="User Avatar" id="modalAvatar">
-                        <label for="avatarUpload" class="change-avatar-btn">Change Avatar</label>
-                        <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
-                    </div>
-                    <div class="form-group">
-                        <label for="newUsername">Username</label>
-                        <input type="text" id="newUsername" placeholder="Enter new username">
-                    </div>
-                    <button id="saveProfile" class="control-button">Save Changes</button>
-                </div>
-            </div>
-        </aside>
+  <div class="app-container">
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <div id="videoGrid">
-                <video id="localVideo" autoplay playsinline muted></video>
-            </div>
-            <div class="chat-container">
-                <ul id="messages"></ul>
-                <div class="message-input-container">
-                    <input id="messageInput" type="text" placeholder="Message #general">
-                </div>
-            </div>
-            <!-- Media Controls -->
-            <div class="media-controls">
-                <button id="toggle-mic" class="control-button">Mute</button>
-                <button id="toggle-cam" class="control-button">Cam Off</button>
-            </div>
-        </main>
+    <!-- ── Left Sidebar: Channels ─────────────────────────────────────────── -->
+    <aside class="channels-panel">
+      <header class="channels-header">Channels</header>
 
-        <!-- Users Panel (Right Sidebar) -->
-        <aside class="users-panel">
-            <!-- Users list will be rendered here -->
-        </aside>
-    </div>
+      <div class="channels-content">
+        <ul class="channel-list">
+          <li class="channel-item active" data-channel="general"># general</li>
+          <li class="channel-item" data-channel="voice-chat"># voice-chat</li>
+        </ul>
 
-    <script type="module" src="script.js"></script>
+        <!-- Voice status bar (hidden until user joins voice) -->
+        <div id="voice-status-bar" class="voice-status-bar hidden">
+          <div class="voice-status-info">
+            <span class="voice-status-icon">🔊</span>
+            <span class="voice-status-label">Conectado en <strong>voice-chat</strong></span>
+          </div>
+          <div class="voice-status-controls">
+            <button id="toggle-mic" class="voice-ctrl-btn" title="Mute">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+              </svg>
+            </button>
+            <button id="toggle-cam" class="voice-ctrl-btn" title="Cam Off">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+              </svg>
+            </button>
+            <button id="disconnect-voice" class="voice-ctrl-btn disconnect-btn" title="Desconectar">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- User profile (clickable to open modal) -->
+        <div class="user-profile" id="userProfile">
+          <div class="profile-avatar">
+            <img
+              src="https://ui-avatars.com/api/?name=User&background=C17C54&color=fff"
+              alt="User Avatar"
+              id="userAvatar"
+            >
+          </div>
+          <div class="profile-info">
+            <span id="userName">User</span>
+            <span class="user-status">Online</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Modal -->
+      <div id="profileModal" class="modal">
+        <div class="modal-content">
+          <span class="close-modal">&times;</span>
+          <h2>Edit Profile</h2>
+          <div class="modal-avatar-container">
+            <img
+              src="https://ui-avatars.com/api/?name=User&background=C17C54&color=fff"
+              alt="User Avatar"
+              id="modalAvatar"
+            >
+            <label for="avatarUpload" class="change-avatar-btn">Change Avatar</label>
+            <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
+          </div>
+          <div class="form-group">
+            <label for="newUsername">Username</label>
+            <input type="text" id="newUsername" placeholder="Enter new username">
+          </div>
+          <button id="saveProfile">Save Changes</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ────────────────────────────────────────────────────── -->
+    <main class="main-content">
+
+      <!-- View: #general (text chat) -->
+      <div id="general-view" class="channel-view">
+        <header class="channel-header">
+          <span class="channel-header-icon">#</span>
+          <span class="channel-header-name">general</span>
+        </header>
+        <ul id="messages"></ul>
+        <div class="message-input-container">
+          <input type="text" id="messageInput" placeholder="Escribe un mensaje en #general...">
+        </div>
+      </div>
+
+      <!-- View: #voice-chat (video/audio) -->
+      <div id="voice-view" class="channel-view hidden">
+        <header class="channel-header">
+          <span class="channel-header-icon">🔊</span>
+          <span class="channel-header-name">voice-chat</span>
+        </header>
+        <div class="video-grid" id="videoGrid">
+          <div class="main-video-container">
+            <video id="localVideo" class="main-video" autoplay muted playsinline></video>
+            <div class="local-video-label">Tú</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ── Right Sidebar: Users ───────────────────────────────────────────── -->
+    <aside class="users-panel">
+      <!-- Populated dynamically by UserListUI -->
+    </aside>
+
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>

@@ -31,24 +31,18 @@ export class VideoConferenceApp {
         this.rtcManager = new WebRTCManager(this.peerManager, UIManager, this.wsManager, userManager);
         this.uiManager = UIManager;
         this.userManager = userManager;
+        this.voiceActive = false;
     }
 
     /**
-     * Inicia la aplicación siguiendo una secuencia ordenada:
-     * 1. Configura los medios locales (cámara/micrófono).
-     * 2. Registra los manejadores de eventos del WebSocket.
-     * 3. Se conecta al servidor WebSocket.
+     * Inicia la aplicación: conecta WebSocket para el chat de texto.
+     * No solicita cámara/micrófono hasta que el usuario entre a #voice-chat.
      */
-    async start() {
-        // Acoplar el rtcManager al peerManager para la notificación del stream.
+    start() {
         this.peerManager.setRtcManager(this.rtcManager);
 
-        // Listen for profile updates
         document.addEventListener('userProfileUpdated', () => {
-            // Update the user list when profile changes
             this.updateUserList();
-            
-            // Notify other peers about the name change
             if (this.wsManager && this.wsManager.isConnected()) {
                 this.wsManager.send({
                     type: 'userUpdate',
@@ -59,9 +53,39 @@ export class VideoConferenceApp {
             }
         });
 
-        await this.setupLocalMedia(); // Paso 1: Configurar medios locales (Cámara/Micrófono).
-        this.registerWebSocketHandlers(); // Paso 2: Registrar manejadores de eventos del WebSocket.
-        this.wsManager.connect(); // Paso 3: Conectar al servidor WebSocket.
+        this.registerWebSocketHandlers();
+        this.wsManager.connect();
+    }
+
+    /**
+     * Entra al canal de voz: solicita cámara/micrófono e inicia WebRTC.
+     */
+    async joinVoice() {
+        if (this.voiceActive) return;
+        this.voiceActive = true;
+        await this.setupLocalMedia();
+    }
+
+    /**
+     * Sale del canal de voz: detiene la cámara/micrófono y cierra conexiones WebRTC.
+     */
+    leaveVoice() {
+        if (!this.voiceActive) return;
+        this.voiceActive = false;
+
+        // Detener todas las pistas de medios locales
+        if (this.peerManager.localStream) {
+            this.peerManager.localStream.getTracks().forEach(track => track.stop());
+            this.peerManager.localStream = null;
+        }
+        this.localVideoElement.srcObject = null;
+
+        // Cerrar todas las conexiones WebRTC y limpiar la UI
+        const userIds = Array.from(this.peerManager.peerConnections.keys());
+        userIds.forEach(userId => {
+            this.peerManager.removePeerConnection(userId);
+            this.uiManager.removeVideoElement(userId);
+        });
     }
 
     /**
@@ -77,6 +101,13 @@ export class VideoConferenceApp {
             alert('No se pudo acceder a la cámara y al micrófono. Por favor, verifica los permisos y refresca la página.');
             throw error; // Detener la ejecución si no se puede obtener el stream.
         }
+    }
+
+    /**
+     * Delega la actualización de la lista de usuarios al rtcManager.
+     */
+    updateUserList() {
+        this.rtcManager.updateUserListUI();
     }
 
     /**
@@ -98,23 +129,12 @@ export class VideoConferenceApp {
     }
 
     /**
-     * Actualiza el nombre de usuario en el servidor.
-     * @param {string} newUsername - El nuevo nombre de usuario.
+     * Pide al usuario un nombre y lo envía al servidor.
      */
-    setUsername(newUsername) {
-        if (!newUsername || !newUsername.trim()) return;
-        
-        const username = newUsername.trim();
-        this.wsManager.send({ 
-            type: 'set-username', 
-            username: username 
-        });
-        
-        // Actualizar el perfil localmente
-        const currentUser = this.userManager.getCurrentUser();
-        if (currentUser) {
-            currentUser.username = username;
-            this.userManager.saveCurrentUser(currentUser);
+    promptAndSetUsername() {
+        const newUsername = prompt('Por favor, introduce tu nombre de usuario:', this.userManager.getUsername(this.rtcManager.myUserId));
+        if (newUsername && newUsername.trim()) {
+            this.setUsername(newUsername.trim());
         }
     }
 
@@ -151,22 +171,9 @@ export class VideoConferenceApp {
         this.wsManager.onMessage('assign-id', (message) => {
             console.log('Evento recibido: assign-id', message);
             this.rtcManager.setMyUserId(message.userId);
-            
-            // Usar el nombre de perfil existente si está disponible
-            const currentUser = this.userManager.getCurrentUser();
-            const username = currentUser?.username || message.username;
-            
-            // Actualizar el usuario con el nombre del perfil
-            this.userManager.updateUser(message.userId, username);
-            console.log(`ID de usuario asignado: ${message.userId} como ${username}`);
-            
-            // Notificar al servidor sobre el nombre de usuario
-            if (currentUser?.username) {
-                this.wsManager.send({
-                    type: 'set-username',
-                    username: currentUser.username
-                });
-            }
+            this.userManager.updateUser(message.userId, message.username);
+            // Enviar automáticamente el nombre guardado en localStorage
+            this.setUsername(this.userManager.getCurrentUsername());
         });
 
         // Evento: Un nuevo usuario se ha unido a la sala.

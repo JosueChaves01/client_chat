@@ -4,8 +4,6 @@ import { userManager } from './UserManager.js';
 // --- Elementos del DOM ---
 const localVideo = document.getElementById('localVideo');
 const messageInput = document.getElementById('messageInput');
-const toggleMicButton = document.getElementById('toggle-mic');
-const toggleCamButton = document.getElementById('toggle-cam');
 
 // Profile elements
 const userProfile = document.getElementById('userProfile');
@@ -18,29 +16,29 @@ const newUsernameInput = document.getElementById('newUsername');
 const avatarUpload = document.getElementById('avatarUpload');
 const modalAvatar = document.getElementById('modalAvatar');
 
+// Channel views
+const generalView = document.getElementById('general-view');
+const voiceView = document.getElementById('voice-view');
+const voiceStatusBar = document.getElementById('voice-status-bar');
+const channelItems = document.querySelectorAll('.channel-item');
+
+// Voice controls (en el sidebar)
+const toggleMicButton = document.getElementById('toggle-mic');
+const toggleCamButton = document.getElementById('toggle-cam');
+const disconnectButton = document.getElementById('disconnect-voice');
+
 // --- Profile Modal Functions ---
 function openModal() {
-    // Set current values in the modal
     newUsernameInput.value = userManager.getCurrentUsername();
     modalAvatar.src = userManager.getCurrentAvatar();
-    
-    // Show the modal with animation
     modal.style.display = 'flex';
-    // Force reflow to ensure the transition works
     void modal.offsetHeight;
     modal.classList.add('show');
-    
-    // Set focus to the username input
-    setTimeout(() => {
-        newUsernameInput.focus();
-    }, 100);
+    setTimeout(() => newUsernameInput.focus(), 100);
 }
 
 function closeModalHandler() {
-    // Hide the modal with animation
     modal.classList.remove('show');
-    
-    // Wait for the animation to complete before hiding the modal
     setTimeout(() => {
         if (!modal.classList.contains('show')) {
             modal.style.display = 'none';
@@ -62,7 +60,6 @@ function updateProfileUI() {
     userAvatar.src = userManager.getCurrentAvatar();
 }
 
-// Handle avatar upload
 function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (file) {
@@ -78,83 +75,119 @@ function handleAvatarUpload(event) {
 }
 
 // --- Event Listeners ---
+const _listenerController = new AbortController();
+const _signal = _listenerController.signal;
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Make sure the elements exist before adding event listeners
     if (userProfile) {
         userProfile.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent event from bubbling up
+            e.stopPropagation();
             openModal();
-        });
+        }, { signal: _signal });
     }
-    
+
     if (closeModal) {
         closeModal.addEventListener('click', (e) => {
             e.stopPropagation();
             closeModalHandler();
-        });
+        }, { signal: _signal });
     }
-    
+
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             saveProfile();
-        });
+        }, { signal: _signal });
     }
-    
+
     if (avatarUpload) {
-        avatarUpload.addEventListener('change', handleAvatarUpload);
+        avatarUpload.addEventListener('change', handleAvatarUpload, { signal: _signal });
     }
 
-    // Close modal when clicking outside the modal content
+    if (newUsernameInput) {
+        newUsernameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') saveProfile();
+        }, { signal: _signal });
+    }
+
     window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeModalHandler();
-        }
-    });
-});
-
-// Allow pressing Enter to save the profile
-newUsernameInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        saveProfile();
-    }
+        if (event.target === modal) closeModalHandler();
+    }, { signal: _signal });
 });
 
 // --- Initialize the Application ---
 async function main() {
     try {
-        // Initialize the app with the current user's data
         updateProfileUI();
-        
-        const app = new VideoConferenceApp(localVideo);
-        await app.start();
 
-        // Event listener for sending chat messages
+        const app = new VideoConferenceApp(localVideo);
+
+        // Conectar WebSocket para el chat de texto (sin cámara aún)
+        app.start();
+
+        // --- Chat de texto (#general) ---
         messageInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent new line in input
+                event.preventDefault();
                 app.sendChatMessage(messageInput.value);
-                messageInput.value = ''; // Limpia el input
+                messageInput.value = '';
             }
         });
 
-        // Event listener para mutear/desmutear el micrófono
+
+        // --- Channel Switching ---
+        channelItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const channel = item.dataset.channel;
+
+                // Actualizar canal activo
+                channelItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                if (channel === 'general') {
+                    // Cambio de vista inmediato y sincrónico
+                    voiceView.classList.add('hidden');
+                    generalView.classList.remove('hidden');
+                    // El usuario SIGUE en voz, no llamamos leaveVoice
+
+                } else if (channel === 'voice-chat') {
+                    // Cambio de vista inmediato y sincrónico
+                    generalView.classList.add('hidden');
+                    voiceView.classList.remove('hidden');
+
+                    // Si no está en voz, unirse en background sin bloquear la vista
+                    if (!app.voiceActive) {
+                        app.joinVoice()
+                            .then(() => voiceStatusBar.classList.remove('hidden'))
+                            .catch(err => console.error('Error al unirse a la voz:', err));
+                    }
+                }
+            });
+        });
+
+        // --- Botón Desconectar ---
+        disconnectButton.addEventListener('click', () => {
+            channelItems.forEach(i => i.classList.remove('active'));
+            document.querySelector('[data-channel="general"]').classList.add('active');
+            voiceView.classList.add('hidden');
+            generalView.classList.remove('hidden');
+            voiceStatusBar.classList.add('hidden');
+            app.leaveVoice();
+        });
+
+        // --- Controles de micrófono y cámara (sidebar) ---
         toggleMicButton.addEventListener('click', () => {
             const isAudioEnabled = app.toggleAudio();
-            toggleMicButton.textContent = isAudioEnabled ? 'Mute' : 'Unmute';
+            if (isAudioEnabled === null) return;
             toggleMicButton.classList.toggle('active', !isAudioEnabled);
+            toggleMicButton.title = isAudioEnabled ? 'Mute' : 'Unmute';
         });
 
-        // Event listener para apagar/encender la cámara
         toggleCamButton.addEventListener('click', () => {
             const isVideoEnabled = app.toggleVideo();
-            toggleCamButton.textContent = isVideoEnabled ? 'Cam Off' : 'Cam On';
+            if (isVideoEnabled === null) return;
             toggleCamButton.classList.toggle('active', !isVideoEnabled);
-        });
-
-        // Event listener para cambiar el nombre de usuario
-        changeNameButton.addEventListener('click', () => {
-            app.promptAndSetUsername();
+            toggleCamButton.title = isVideoEnabled ? 'Cam Off' : 'Cam On';
         });
 
     } catch (error) {
